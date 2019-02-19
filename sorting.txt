@@ -1,0 +1,87 @@
+-----------------
+Sorting Algorithms
+-----------------
+
+ Insertion sort
+ --------------
+     - incrementally insert values one by one in the array
+     - in-place, O(n^2)
+     - Note: to insert in place, all already sorted values higher than
+             the new element must be moved!
+     + O(n) on almost sorted input, as inner loop will not execute at all
+         (if inner loop runs right to left!)
+
+         def sort(values):
+             for i in range (1, len(values)):
+                 j = i
+                 while values[j] < values[j-1]:
+                      swap(j, j-1)
+                      j = j - 1
+    - Note: O(n log n) if not in-place but inserting in a balanced search tree
+
+ Selection sort
+ --------------
+     - add smallest remaining element to the end
+     - in-place (by using swap), O(n^2)
+
+ Heap sort
+ ---------
+     - same as selection sort, but puts elements in a max-heap first
+     + worst case O(n log n)
+     - uses n memory
+
+ Merge sort
+ ----------
+    * Split in 2 sub-arrays, sort each, then merge
+    + Worst case O(n lg n) (n to merge top level array, then recurse log n deep)
+    + Great for linked lists as no random access is required
+    - Needs n storage when working on arrays
+
+ Quick sort
+ ----------
+    * split around pivot
+    * sort 2 sub-arrays (can ignore pivot itself)
+    * O(n log n)
+    - worst case O(n^2) if pivot is always max/min
+    + in-place
+    + Typically 2-3 times faster than mergesort or heapsort
+
+ Randomized quick sort
+ ---------------------
+    * Start by randomizing input, then run quicksort
+    * This adds O(n) so complexity remains O(n log n)
+    * But this is now the worst case complexity
+    * Alternative: sample pivot
+
+ Bucket/Distribution sort
+ ------------------------
+    * Divide in buckets, for example using first character of name.
+    * Then recursively divide again (using second character)
+    + Great if input is uniformly distributed
+
+  Counting sort
+  -------------
+     + O(n + k) if all keys are part of a given range 1..k
+     * First create a count array counting occurrences,
+       Then modify this so it is accumulated,
+       Then use this as indexes in the input array:
+
+  Radix sort
+  ----------
+     * Works if all keys are part of the range 1..n^2 (or n^3 or ...)
+     * Do counting-sort over the least significant digit (modulo 10)
+     * Then repeat for the next significant digit
+     * Note: This requires a stable sort algorithm
+     * Complexity: O(d*(n+b)) with 'd' the number of digits and 'b' the base (10)
+          'd' is log_b(max_number), which is log_b(n^2) = 2 log_b n
+          --> O(n log_b n)
+          --> if we take 'b' as 'n', then this becomes O(n log_n n) = O(n)
+     - Requires space of size 'n' (for counting sort)
+     - The constants are higher than quick-sort, i.e. it does not always outperform quicksort
+
+  One-sided binary search
+  -----------------------
+      To search in a sorted unbounded array,
+      look for element 1,2,4,8,16,... until you've passed your element,
+      then do binary search in the window
+      --> great if we know the key is close to the current position

@@ -1,0 +1,367 @@
+-----------------
+Graphs
+-----------------
+
+ Terminology
+ -----------
+   * vertices and edges
+   * degree of a vertex is the number of edges adjacent to it
+   * in a 'regular graph' each vertex has the same degree
+   * the 'connectivity' of a graph is the smallest number of vertices
+     whos deletion would disconnect the graph
+  * A 'articulation vertex' or 'cut node' is a vertex whos deletion would
+    disconnect a connected component from the graph.
+  * A 'matching' is a subset of the edges so that no 2 edges in the subset share
+    a vertex
+
+ Flavors
+ -------
+     * undirected vs directed
+     * weighted vs unweighted
+     * simple vs non-simple (no loops, no multi-edges)
+     * cyclic vs acyclic
+     * sparse vs dense
+     * connected vs unconnected vs strongly connected
+        - strongly connected means every vertex can be reached from every vertex
+     -> tree is connected, acyclic, unidirectional
+
+ Storage
+ -------
+    * Adjacency matrix: m[x][y] is True if 'x' and 'y' are connected
+        + fast lookup/insert/deletion of edges
+        - uses O(v^2) space
+        - expensive to add vertices
+    * Adjacency list: A list of linked lists of neighbors.
+                      Each vertex has a linked list.
+       - hard to verify if edge (x, y) is in G
+          -> many algorithms do not need to do that lookup
+       + space efficient O(v + e)
+       + cheap to add vertices/edges
+       -> often the right data structure
+    * Node as object, Edge as pointer:
+       + Uses O(v + e) space
+
+ Breadth First Search
+ --------------------
+    * First visit all edges from the root before investigating any other vertices
+    * Complexity O(v + e)
+    * Algorithm:
+      * remember vertices to visit once you've encountered them,
+        unless you already visited them.
+
+       def bfs(root):
+           to_visit = Queue(root)
+
+           while not to_visit.empty:
+                vertex = to_visit.get()
+                vertex.visited = True
+
+                pre_visit_vertex(vertex)
+                for edge in vertex.edges:
+                    visit_edge(edge)
+                    if not edge.endpoint.visited:
+                        edge.endpoint.parent = vertex
+                        to_visit.add(edge.endpoint)
+                post_visit_vertex(vertex)
+
+
+ Depth First Search
+ ------------------
+    * Follow one path as deep as possible before following a sibling path
+    * Complexity O(v + e)
+    * Recursive:
+       def dfs():
+           for vertex in vertices:
+               if not vertex.visited:
+                   visit(vertex)
+
+      def visit(vertex):
+          v.visited = True
+          pre_visit_vertex(vertex)
+          for edge in v.edges:
+              visit_edge(edge)
+              if not edge.endpoint.visited:
+                  edge.endpoint.parent = vertex
+                  visit(edge.endpoint)
+          post_visit_vertex(vertex)
+
+    * 'tree edges' are the edges we visit and the endpoint is not visited yet,
+      'back edges' are the edges going back to an ancestor
+
+ Find Connected components
+ -------------------------
+    * A connected component is a group of vertices that have a path between them
+    * Find all connected components using BFS
+        * start at random vertex, run it, remember which vertices were encountered
+        * then pick another random vertex to discover the next connected component
+
+        for vertex in vertices:
+            if not vertex.visited:
+                 bfs(vertex)
+                 print("Got component {components}")
+
+        def pre_visit_vertex(vertex):
+             components.add(vertex)
+
+    * O(v + e)
+
+  Vertex coloring
+ ----------------
+    * Assign each vertex a color so no edge (directly) links 2 vertices with
+      the same color, using a minimum number of colors.
+    * O(v + e)
+    * Use case: Register allocation in compilers
+    * TODO: FIND AN ALGORITHM FOR THIS
+
+ Two-coloring graph
+ -----------------
+    * A graph is 'bipartite' if it can be colored using only 2 colors
+    * (example had-sex-with if nobody was LGT)
+    * Use BFS and give each one the opposite color of the parent:
+
+      for vertex in vertices:
+          if not vertex.visited:
+               vertex.color = WHITE
+               bfs(vertex)
+
+      def pre_visit_vertex(vertex):
+          vertex.color = complement(vertex.parent.color)
+
+ Find Articulation vertices
+ --------------------------
+     * Also called 'cut node'
+     * Good explanation here:
+        https://www.eecs.wsu.edu/~holder/courses/CptS223/spr08/slides/graphapps.pdf
+     * Basically we use DFS, and when we encounter a back-edge the vertex knows
+       'hey, I am part of a loop that can go back to ancestor X'.
+       Then, when leaving this vertex it will inform its parent of this back-edge,
+       which recursively happens so that eventually the ancestor 'X' is told
+       it is part of a loop that goes up to themselves.
+       Now this ancestor knows it is a articulation vertex,
+       as cutting it up will disconnect the entire loop from the root.
+       There are 2 exceptions:
+           - if the ancestor is a leaf, it is not an articulation vertex
+           - if the root has 2 or more edges, it is an articulation vertex
+     * Use DFS
+         * 'index' is the visit number (vertex you visited x-th has index 'x')
+             -> calculated in pre_visit_vertex hook
+         * 'cycle-root' is the vertex with the lowest 'index' that can be reached
+             - via own back-edges, or
+             - via back-edges of a descendent node
+             -> calculated in post_visit_vertex hook
+        * Then, articulation vertices are:
+            - the root if it has 2 or more edges
+            - any 'cycle-root' unless it is a leaf
+             (as cutting it will cut of the vertices that can only reach this
+              and no higher vertices)
+
+      def pre_visit_vertex(vertex):
+          vertex.index = vertex.parent.index + 1
+          vertex.cycle_root = vertex.index
+
+      def process_edge(edge):
+          if edge.endpoint.visited and edge.endpoint is not edge.parent:
+              # A back-edge, so update our cycle-root
+              edge.start.cycle_root = min(edge.start.cycle_root, edge.endpoint.index)
+
+      def post_visit_vertex(vertex):
+         if vertex.parent is None:
+             if vertex.degree > 1:
+                 print("ROOT IS AN ARTICULATION POINT")
+         else:
+             # If we can reach a cycle-root higher than our parent, let them know
+             if vertex.cycle_root < vertex.parent.cycle_root:
+                 vertex.parent.cycle_root = vertex.cycle_root
+
+             if vertex.cycle_root == vertex.index:
+                 if vertex.degree > 1:
+                     print("VERTEX IS AN ARTICULATION POINT")
+
+ Topological sorting
+ -------------------
+    * Order vertices so all directed edges go from left to right
+    * Works on Directed Acyclical Graphs
+    * Used to satisfy precedence constrains (X must be done before Y)
+    * Use DFS, and push *finished* vertexes in a stack
+
+    def post_visit_vertex(vertex):
+        stack.push(vertex)
+
+ Find cycles
+ -----------
+    * Use DFS, and keep index
+    * check for edges going to vertices with lower index
+    * Note: for undirected graphs, 'index' is not required: if you encounter a
+            visited endpoint that is not your parent, you have a cycle
+
+    def pre_visit_vertex(vertex):
+        vertex.index = vertex.parent.index
+
+    def process_edge(edge):
+        if edge.endpoint.visited and edge.endpoint.index < edge.start.index:
+            # Cycle found
+
+ Strongly connected components
+ -----------------------------
+     * If you can go to every vertex from every vertex
+     * Very useful (for example important for roads or you'd get stuck)
+     * O(e + v)
+     * Use DFS, and add index to all vertices
+     * Reverse direction of all edges,
+       and use DFS on the reversed graph starting with the vertex with the lowest index.
+       -> each tree here is a strongly connected components
+
+    Step 1:
+      def pre_visit_vertex(vertex):
+          vertex.index = vertex.parent.index
+
+    Step 2:
+       reversed_graph = reverse(graph)
+       vertices = sorted(reversed_graph.vertices, key=lambda v: v.index)
+       for vertex in vertices:
+           if not vertex.visited:
+               components = []
+               dfs()
+               print(f"{components} are strongly connected")
+
+       def pre_visit_vertex(vertex):
+           components.append(vertex)
+
+ Minimum spanning tree
+ ----------------------
+    * Used in weighted graphs
+    * the tree with the minimum total weight
+    * Prim's algorithm:
+        - start with any vertex as the tree
+        - pick the cheapest edge between tree and vertex not in tree
+        - repeat
+              # All edges going out of the tree.
+              tree_edges = {root: 0}
+
+              while any_vertices_remaining:
+                  vertex = pick_vertex_to_add()
+                  vertex.added = True
+                  update_tree_edges(vertex)
+
+              def pick_vertex_to_add():
+                  # Find and return the cheapest edge from tree_edges
+
+              def update_tree_edges(vertex):
+                  del tree_edges[vertex]
+                  # Now go over the edges of vertex and update the values in tree_edges
+                  # if the new edge is cheaper
+
+        - Complexity: O(v^2)
+        - Note: can be done cheaper using fancy binary heaps for tree_edges
+
+    * Krushal's algorithm:
+        - put each vertex in its own set
+        - go over the edges ordered by weight, and if the edge connects 2 sets, merge them.
+        - O(e lg v): sort edges O(e lg e), then for each edge O(lg v) lookup
+                     if we use a set-partition
+                     (because e is <= v^2 we know that log e <= log v^2 = 2 log v)
+        + better than Prim's algorithm if the graph is sparse
+
+ Maximum spanning tree
+ ---------------------
+    * Use minimum spanning tree with negative weights
+
+ Minimum product spanning tree
+ -----------------------------
+    * To minimize the product of the weights, use log(weight) as weight
+      (because log(a*b) = log(a) + log(b))
+
+ Minimum bottleneck spanning tree
+ --------------------------------
+    * This means we want the maximum edge weight to be as low as possible.
+    * Is automatically guaranteed (think of how Krushal's algorithm works,
+      we always pick the cheapest edge possible)
+
+ Find Shortest path
+ ------------------
+    * If unweighted, use BFS and remember the parent when discovering a vertex
+    * Else use Dijkstra
+    * O(v^2) as for each vertex we find the vertex with the lowest cost O(v)
+    * On each iteration visit the vertex with the lowest cost to reach.
+      Then use their edges to update the cost of the neighboring vertices
+      (if it is lower than the current cost). Also set the parent pointer in that
+      case.
+      Rinse and repeat, and at the end you have the cost and path
+          for vertex in vertices:
+              vertex.cost = math.inf
+          root.cost = 0
+
+          to_visit = set(vertices)
+
+          while len(to_visit):
+              vertex = pop_vertex_with_lowest_cost(to_visit)
+              for edge in vertex:
+                  new_cost = vertex.cost + edge.weight
+                  if edge.endpoint.cost < new_cost:
+                      edge.endpoint.cost = new_cost
+                      edge.endpoint.parent = vertex
+          # Now the endpoint.cost and endpoint.parent can be used to find cost and
+          # direction of the shortest path
+     * Note: Only works with positive weights
+
+ Find All Shortest paths
+ -----------------------
+    * We can run Dijkstra for each vertex -> O(v^3)
+    * Floyd's algorithm is also O(v^3), but simpler so faster in reality
+        * Create distance matrix. Initialize edges, and set rest to math.inf
+        * Then we will go over each vertex 'V',
+          and check for each set of vertices if their distance would be shorter
+          if they used a path through 'V' instead of whatever path they used before.
+
+          distances = initialize_matrix()
+
+          for V in vertices:
+              for left in vertices:
+                  for right in vertices:
+                      distance_through_V = distances[left][V] + distances[V][right]
+                      if distance_through_V < distances[left][right]:
+                          distance[left][right] = distance_through_V
+       * Note: This also gives us the 'transitive closure', i.e. which vertex
+               can reach most other vertices (because if it is unreachable distance
+               will remain math.inf)
+
+ Network flow
+ ------------
+    * Use BFS to find a possible path from source to drain
+    * See how much volume we can push through this path, and substract that
+      from the path's capacity
+    * Remove edges that are fully saturated
+    * Repeat until no path remains
+    * Proven to be O(v^3) if we always pick the shortest path (hence the use of BFS)
+
+      total_volume = 0
+      while True:
+          initialize_search() # resets parent pointers, visited, and so on
+          bfs()
+          if _could_reach_endpoint():
+              volume = _get_path_volume()
+              _add_stream(volume)
+              total_volume += volume
+          else:
+              return total_volume
+
+      def _could_reach_endpoint():
+        return endpoint.parent is not None
+
+      def _get_path_volume():
+          return min(edge.remaining_capacity for edge in _get_path())
+
+      def _add_stream(volume):
+          for edge in _get_path():
+              edge.remaining_capacity -= volume
+              edge.flow += volume
+              if edge.remaining_capacity == 0:
+                  edge.start.remove_edge(edge)
+                 # alternatively support an edge_filter in BFD and check for
+                 # remaining_capacity in the filter
+
+      def _get_path():
+        start = endpoint
+        while start.parent is not None:
+            yield _find_edge(from=start, to=start.parent)
+            start = start.parent

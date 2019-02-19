@@ -1,0 +1,201 @@
+-----------------
+Data Structures
+-----------------
+
+ Array
+ -----
+     + O(1) lookup using index
+     + Space efficient
+     + Memory locality
+     - Fixed size (or put otherwise, adding elements is expensive)
+         -> filling an array with n elements is amortized O(n)
+     - insert/delete is O(n) as it requires moving of elements
+     + append/pop is O(1)
+
+ Linked List
+ -----------
+     - O(n) lookup
+     - Wastes 1/2 pointers per element
+     - No memory locality
+     - No random access
+     + insert/delete/swap is O(1)
+     + append/pop is O(1)
+
+ Self organizing list
+ --------------------
+    * Whenever a key is accessed, move it to the front
+    * Most applications have an uneven access frequency and locality of reference
+    * Works with linked-list, arrays, trees
+
+ Stack
+ -----
+     * LIFO
+     * Simple and efficient
+     * Great when order doesn't matter
+     * Linked list or array (is size known up front?)
+
+ Queue
+ -----
+     * FIFO
+     * Minimizes maximum wait time
+     - Harder to implement than stack
+     * Linked list or array (is size known up front?)
+
+ Dictionary
+ ----------
+     * Key/Value lookup
+     * Can be implemented using
+         - sorted/unsorted array/linked-list
+         - binary search tree
+         - hash map
+
+ Binary Search Tree
+ ------------------
+     + O(lg n) lookup (actually O(height), which is 'lg n' if balanced)
+     - Wastes 2/3 pointers (left, right, [parent]) per element
+     - No memory locality
+     + insert/delete is O(height)
+
+ B-tree
+ ------
+    * Use when data does not fit in main memory
+
+ Priority Queue
+ --------------
+     * Operations insert, find-min or find-max, delete-min or delete-max
+     * Implemented using a max/min heap
+
+   Bounded height priority queue
+   -----------------------------
+      * Useful if the keys are integers between 1 and n (think a lot of graph problems)
+      * Have array of 'n' linked lists, and a pointer to the top one with data
+
+   Fibonacci and pairing heaps
+   ---------------------------
+      * Fancy, but allow efficient decrease-key operations
+
+ Hash Map
+ --------
+     * Great for 100 to 10M keys
+     * 2 options for collisions: Chaining vs Open Addressing
+                                 (first open spot)
+         --> delete might mean moving, search needs to keep going
+         + Open-Addressing has better locality
+         - Open-Addressing might perform worse if it fills up
+     * Number of buckets 'm' should be about the same as maximum 'n'
+     * For open-addressing --> add 30%
+     * 'm' should be prime for best hashing performance
+     * Print statistics for key distribution to ensure you use the right hash
+
+ Max Heap
+ --------
+     * Keeps partial ordering
+     * Each node is always bigger than its 2 children
+     * It's a full binary tree
+       (with empty spots only at leaf level to the right)
+     * Insert:
+         - Insert element in first empty spot
+         - Bubble up: while element is bigger than its parent:
+                          swap with parent
+     * Extract-max:
+         - Replace root with the rightmost leaf node!!!
+         - Bubble down: while element is smaller than any of its children:
+                            swap with biggest child
+     * Both operations are O(log n)
+     * Populating it is O(n):
+         - Add all elements randomly
+         - Then for each element from end to start: do bubble_down
+           (which will be cheap as the height of the subtree is small)
+     * Stored as fixed-size array (use 1 based indexing for ease of reasoning)
+     * NOTE: How to insert in a full tree: you don't.
+             To keep the 'n' smallest items, use a max-heap and pop root
+             the new element is smaller.
+
+ Min Heap
+ --------
+     * Same but min is at the top
+
+ Set
+ ---
+    * When:
+        - Fixed universe of items
+        - Split in subsets where order does not matter
+    * Operations:
+        - Membership check
+        - Compute union/intersection
+        - Add/Remove members
+    * Note: Storing sets sorted makes a lot of these operations perform in linear time
+    * Implementations:
+        - Bit vectors
+            + space efficient
+            + cheap add/remove/intersection/union
+            - Not great for sparse sets, as enumerating members always takes O(n)
+        - Sorted Array, dictionary
+        - Bloom filter:
+            * If universe is not fixed, hash values and use bitvector
+            * Use multiple hashes/bitvectors to statistically remove collisions
+            * Note: will always have a small chance of error,
+                    but a lot of things like spellcheckers do not care.
+        - Disjoint-set (see below):
+           + If all sets are disjoint
+
+ Disjoint-Set
+ ------------
+    * A collection of disjoint sets
+    * Can divide a collection (graph) in components
+    * O(log n) merge sets
+    * O(log n) check if 2 elements are in the same component
+      * Each subset is a tree with parent pointers
+      * We also know the number of elements in the tree
+      * To check if 2 elements are in the same component compare the roots
+      * To merge 2 components, make the smallest a subtree of the largest
+
+  Suffix trees
+  ------------
+      * Find all places where string S occurs
+      * O(n) lookup
+      + Cheap to build/update
+      - Uses lots of memory
+      - Hard to construct efficiently
+      * Trie of the n suffixes of a n-character string s.
+        For example the below tree contains the words 'the', 'there' and 'them'
+        (The '*' indicates that node also serves as an endpoint for 'the')
+
+                       < >
+                        |
+                        T
+                        |
+                        H
+                        |
+                        E(*)
+                   R----+----M
+                   |
+                   E
+     * Alternatively: Add non-printable character not in any of the strings
+                      to end of all strings, Then 'the<end>' will end in a leaf.
+     * O(n^2) space and time to build
+     * More efficient O(n) space: Have a single element represent a range:
+
+                       < >
+                        |
+                       THE(*)
+                   RE---+----M
+     * Uses:
+         - Longest common substring
+             - Build suffix tree with all suffixes of all strings.
+               On each node track 1) length of common prefix and 2) number of
+               distinct strings under it
+             --> Find substring in linear time
+
+  Suffix array
+  ------------
+     * Easier and less memory consumption than suffix tree (factor 4 smaller)
+     * Sorted array of the suffixes of a string, so for 'data' the array will
+       contain [ 'a', 'ata', 'data', 'ta' ].
+       But instead of containing these suffixes it contains their position in the
+       string [ '3', '1', '0', '2' ] (making it only use O(n) memory).
+     * Because it is sorted it is easy to for example find all occurrences of a
+       given pattern. In or example if we look for the pattern 'a' we
+          - do a binary search pointing us to the first element in the array
+          - then walk all the options until we no longer have a prefix match
+     * Note: Fancy algorithms exist to populate this efficiently

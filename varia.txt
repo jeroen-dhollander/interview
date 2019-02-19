@@ -1,0 +1,93 @@
+-----------------
+Big O
+-----------------
+
+For which 'n' are they practically useless:
+        n!      n >= 20
+        2^n     n >= 40
+        n^2     n >= 1.000.000
+        n lg n  n >= 1.000.000.000
+        n       never
+        lg n    never
+
+When do you encounter them:
+        n!      generating permutations/orderings of n items
+        2^n     walking all subsets ({A}, {AB}, {ABC}, ...)
+        n^2     walking all pairs, sorting (insertion), all substrings
+        n lg n  sorting (quick/merge)
+        n       walking an array
+        lg n    search, when halving a problem
+
+
+-----------------
+Problem spaces:
+-----------------
+
+   P: Problems with Efficient Algorithms for *Finding* Solutions
+       -> To solve: polynominal, O(n^2), O(n^10), ...
+   NP: Problems with Efficient Algorithms for *Verifying* Solutions
+       -> To solve: upperbound: *might be* brute force, O(2^n)
+                    but can be less, for example P is subset of NP
+   NP-complete: The most difficult NP problems
+   NP-hard: problems that are at least as difficult to solve as any NP problem
+
+
+-----------------
+Varia:
+-----------------
+
+CRUD: Create, Retrieve, Update, Destroy
+
+REST:
+    - REpresentational State Transfer
+    - access through a set of known stateless operations
+
+Databases:
+   ACID: requirement for transactional databases
+       - Atomicity: All actions succeed, or none
+       - Consistency: The transaction maintains the database invariant,
+                      it goes from valid state to valid state.
+       - Isolation: 2 transactions in parallel are not influenced by each another
+       - Durability: A committed transaction will remain in effect,
+                     even in case of a power outage
+   Write-Ahead-Log:
+        - All modifications are written to a log file before applying them,
+          including redo/undo information.
+        - On failure, the log can be inspected to decide to undo/redo/complete
+          the transaction.
+        --> The database is changed *in-place*
+   Shadow-Paging:
+        - copy-on-write, so the changes are applied to a new copy,
+          and references are only updated when the change is complete.
+        - the 'old master - new master' principle
+        - If the referring page needs to be shadowed as well, this has recursion
+          issues
+          --> write-caches might help here
+        --> The database is *not* changed in-place
+   Locking vs multiversioning:
+        - multiversioning is the idea where everybody writes in their own candidate
+   Distributed systems need a 2-phase commit protocol
+        1) voting: the master asks everybody to ack whether they are ready
+                   to apply things
+        2) commit: if everybody said yes, tell them to commit.
+                   Otherwise, tell them to abort
+        -> This is *blocking*
+
+   Key-value database:
+       --> opaque data
+       + flexibility,
+       + less memory consumption (as optional values are not stored)
+       - performance might be an issue
+  Document-oriented database:
+       - subset of Key-value database that specializes in a single document type
+         (e.g. XML)
+       --> can offer richer access API's (like an 'update' mechanism)
+       - basically our IDB is a poor man's version of this
+
+   Strong vs eventual consistency:
+       - Will all readers always see the latest version (strong),
+         or will they eventually see the latest version (eventual)
+
+Scaling:
+    - Horizontal: aka scale out/in: add more nodes
+    - Vertical: aka scale up/down: improve a single node (upgrade CPU)

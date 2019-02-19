@@ -1,0 +1,29 @@
+-----------------
+Math:
+-----------------
+
+   Binomial coefficient
+   --------------------
+      * number of ways to take 'k' elements out an collection of size 'n'
+      * n!/( (n-k)!k! )
+      * Note: To calculate use dynamic programming (and cache),
+        as calculating n! will immediately kill your program.
+        For this you translate this in a recursive algorithm:
+          (n+1)!/( (n+1-k)!k!) = (n+1)/(n+1-k) * n!/((n-k)!k!)
+                               = (n+1)/(n+1-k) * binomial(n, k)
+
+   Pseudo-random numbers
+   ---------------------
+      * Do not write your own algorithm
+      * But if you have to, this works good when using correct values for a,b,c:
+            value = (a * <previous-value) + b) mod c
+      * Warning: cycles after 2^32 calls if using 32-bit numbers,
+                 which computers can do in minutes
+
+   Prime test
+   ----------
+      * Fremat's theorem states that
+             a^(n-1) = 1 mod n
+        for all 'a' not divisible by 'n' if 'n' is a prime,
+        so pick random values for 'a' and see if they all evaluate to '1'.
+      -> This is a statistical test

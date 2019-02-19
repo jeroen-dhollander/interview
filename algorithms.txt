@@ -1,0 +1,193 @@
+-----------------
+Algorithms
+-----------------
+
+ Terminology
+ -----------
+    * Reduction: Solve a problem using a well known solution for another problem
+                 (using sum(x,y) we can implement sum_n(a,b,c))
+    * Greedy algorithm: Always take the locally optimal next choice
+                        (which might not lead to the best solution)
+    * Momoization: Caching sub results, e.g. used in dynamic programming.
+
+ How to find an algorithm
+ ------------------------
+    1) Do I really understand the problem?
+        - What is the input?
+        - What is the desired output?
+        - Do a small example by hand and see how you solve it.
+        - What is the scale (1k or 1m items)?
+        - What is the speed requirement?
+        - Is it a numerical problem? A graph problem? A string problem? A set problem?
+    2) Can I find a simple algorithm or heuristic?
+        - Does brute force work?
+           - What is the runtime?
+           - If not: Do I really have enough information?
+        - Does a simple rule work? (like 'always pick the smallest item')
+           - On what type of inputs does this work badly? How do I improve this?
+           - How fast is it?
+    3) Does it look like a well known algorithm?
+    4) Are there special cases I _can_ solve?
+       - Maybe by simplifying/restricting the input
+       - Maybe by calculating a partial result
+       - How can I generalize this special case?
+    5) Apply standard algorithm design paradigms:
+       - Does sorting a set of items help?
+       - Can I split it in 2 smaller problems?
+           (big vs small? left vs right?)
+           --> maybe divide-and-conquer
+       - Is there a natural left-to-right order in the input objects?
+          - A set, characters in a string, elements of a permutation,
+            leaves of a tree?
+          - If so, can I use dynamic programming?
+       - What operations are being done repeatedly?
+          - Searching, finding largest/smallest element?
+          - Can I use a data-structure to speed this up?
+
+
+ Backtracking
+ ------------
+    * Exhaustingly walk every configuration of a search space
+    * This is DFS in a tree where each vertex is a partial solution,
+      an edge means you advance from one state to the next,
+      and a leaf means a full solution (or a dead end without solution)
+    * Why DFS and not BFS? Because the space required for DFS is relative to the
+      height of the solution, where the space required for the BFS is relative
+      to the width of the solution.
+      For most practical problems, the width is way bigger than the height.
+    * implementation:
+
+      backtrack(state, start=[]):
+          try:
+                try_to_backtrack(start, 0, state)
+          except Finished as e:
+              # Throw Finished to terminate early
+              pass
+
+      def try_to_backtrack(partial_solution, depth, state):
+          if is_a_solution(partial_solution, depth, state):
+              process_solution(partial_solution, depth, state)
+          else:
+              depth = depth + 1
+              candidates = construct_candidates(partial_solution, depth, state)
+              for candidate in candidates:
+                  partial_solution.append(candidate)
+                  make_move(partial_solution, candidate, depth, state)
+                  try_to_backtrack(partial_solution, depth, state)
+                  undo_move(partial_solution, candidate, depth, state)
+                  partial_solution.pop()
+
+     Construct all subsets
+     ---------------------
+         * use backtracking with an array containing a bool to indicate if each
+           element is present:
+
+         def is_a_solution(_, depth, elements):
+             return k == len(elements)
+
+        def construct_candidates(*_):
+             return [True, False]
+
+         def process_solution(positions, depth, elements):
+             subset = [
+                 elements[position]
+                 for position, is_set in enumerate(positions)
+                 if is_set
+             ]
+             # Now do something with the subset
+
+     Construct all permutations
+     --------------------------
+         * use backtracking with an array with positions for the element
+             backtrack(elements)
+
+         def is_a_solution(_, depth, elements):
+             return depth == len(elements)
+
+        def construct_candidates(partial_solution, depth, elements):
+            # Note this can be done more efficient by storing a bitvector
+            # of the used positions in state
+            return (
+                 position
+                 for position in range(1, len(elements))
+                 if position not in partial_solution
+            )
+
+         def process_solution(positions, depth, elements):
+             permutation = [ elements[position] for position in positions ]
+             # Now do something with the result
+
+     Construct all paths in a graph
+     ------------------------------
+         * all paths from start to end
+
+         def all_paths(start, end):
+             backtrack(state=end, start=[start])
+
+         def is_a_solution(path, depth, endpoint):
+             return path[-1] == endpoint
+
+        def construct_candidates(path, depth, endpoint):
+            current_vertex = path[-1]
+            parent_vertex = path[-2] if len(path)>1 else None
+
+            return (
+                 edge.endpoint
+                 for edge in current_vertex.edges
+                 if edge.endpoint is not parent_vertex
+            )
+
+         def process_solution(path, depth, endpoint):
+             # We have a path
+
+
+ Pruning
+ -------
+    * Optimization for backtracking by removing all solutions that we already
+      know are invalid
+    * e.g. we already have a solution with cost X and the current partial
+      solution is already more expensive than that
+
+ Grammar Parser
+ --------------
+     * A Context Free Grammars consists of:
+         - A set of terminal symbols:   'noun ::= cat, milk',
+         - A set of nonterminal rules:  'sentence ::= noun verb'
+     * Each CFG can be reduced to a Chomsky normal form, where the nonterminal
+       rules only have 2 parts
+     * A string can be evaluated against this grammar using dynamic programming.
+     * Simply take the root rule and then exhaustingly split the input in all
+       possible substrings and see if they match the rules, i.e.
+       for the input 'a cat drinks milk' we try to see if ('a', 'cat drinks milk')
+       or ('a cat', 'drinks milk), and so on matches the root rule.
+     * Easy peasy
+
+ Dynamic programming
+ --------------------
+    * Reduce the problem to a smaller version
+      (by for example stripping the last character of a string)
+    * Top-down: start with the full problem and recurse
+      * Uses cached results to prevent the same computations from repeating
+    * Bottom-up: start with the length 0 solution and build up
+    * See https://medium.freecodecamp.org/demystifying-dynamic-programming-24fbdb831d3a
+
+ Knapsack Problem
+ ----------------
+     * Given items with a size and value,
+       put them in a knapsack of capacity C to maximize the value.
+       Note you can obviously replace 'size' with 'cost'.
+     * NP Complexity
+     * Special cases:
+         - if sizes are equal -> sort and pick the most expensive ones
+         - if price/kg is equal -> still NP problem, known as 'subset sum'
+         - all sizes are small integers
+            -> dynamic programming O(nC) time and O(C) space
+               (Keep track if a subset has a subset summing up every number 0..C.
+                Then one by one add items until we consider the entire set)
+            --> up to C 1000
+      * Solve use backtracking and an array of 0/1 to indicate presence or not.
+      * Heuristics:
+           - Pick highest price/kg items first
+           - Remove cheap but heavy items to simplify the problem
+           - Scale: If C is too high, lower it by integer dividing all sizes.
+             Then use dynamic programming
