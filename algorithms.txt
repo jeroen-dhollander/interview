@@ -140,7 +140,6 @@ Algorithms
          def process_solution(path, depth, endpoint):
              # We have a path
 
-
  Pruning
  -------
     * Optimization for backtracking by removing all solutions that we already
@@ -220,3 +219,13 @@ Algorithms
          - Length of critical path
          - Minimum completion time: If unlimited processors -> same as critical path
          - Best schedule using X workers: NP-complete
+
+ Bin packing
+ -----------
+    * Given a set of items with known dimensions,
+      fit them in a minimal number of bins with capacities c1..m
+    * NP-complete
+    * Heuristic:
+       * Order objects by size/shape (biggest first)
+       * Put it in the leftmost bin the object fits in
+       * O(n lg n + b*n)

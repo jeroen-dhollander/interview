@@ -114,11 +114,17 @@ Graphs
       the same color, using a minimum number of colors.
     * O(v + e)
     * Use case: Register allocation in compilers
-    * TODO: FIND AN ALGORITHM FOR THIS
+    * Optimal number of colors is the maximum degree of the graph,
+      unless the graph is complete or an odd circle (then you need one more).
+    * NP-complete
+    * Greedy Heuristic:
+        - Order the vertices by degree (descending order)
+        - For each vertex, pick a color not used by any of the neighbors.
+        - Will use at most <max-degree> plus one colors, i.e. max 1 too many
 
  Two-coloring graph
  -----------------
-    * A graph is 'bipartite' if it can be colored using only 2 colors
+    * A graph is 'Bipartite' if it can be colored using only 2 colors
     * (example had-sex-with if nobody was LGT)
     * Use BFS and give each one the opposite color of the parent:
 
@@ -129,6 +135,36 @@ Graphs
 
       def pre_visit_vertex(vertex):
           vertex.color = complement(vertex.parent.color)
+
+  Edge coloring
+  -------------
+     * Assign each edge a color so no 2 same-color edges share a common vertex
+     * NP-complete
+     * Encountered when scheduling applications:
+         For example, suppose we want to schedule a set of 2-person interviews.
+         We want to schedule non-conflicting events simultaneously.
+         -> Create a graph with vertices = people and edges = pairs to be
+            interviewed. The colors then represent timeslots
+     * Optimal number of colors is at most the maximum vertex degree of the graph
+       plus one.
+     * Vizing's algorithm will always find a solution of <max-vertex-degree> plus one:
+       * O(v*e*<max vertex degree>)
+       * Color all edges one by one as long as you can do it
+       * When you have an edge (e1) from X to Y that you can't color,
+         look at the colors used in Y.
+         These are at most <max-vertex-degree>, so there is at least
+         one color still available (yellow).
+          - Find the edge (e2) in X that uses (yellow), and look at the vertex it goes to.
+            Find the color still available there (blue).
+               - If X does not use (blue) --> change the color of (e2) to (blue),
+                 and you can use (yellow) for (e1).
+               - If X uses (blue), find the edge in X that does use it (e3).
+                 Again, look at the color it does not use (green).
+               - Repeat this over and over, and eventually you will find that
+                 edge (eX) requires a color we already investigated (blue).
+                 So in this case, assign (blue) to (eX),
+                 then assign (green) to (e3) (which was blue previously),
+                 and unravel and you'll end up you can continue.
 
  Find Articulation vertices
  --------------------------
@@ -186,22 +222,22 @@ Graphs
     * Works on Directed Acyclical Graphs
     * Used to satisfy precedence constrains (X must be done before Y)
 
-   Algorithm to find one sequence
-   ------------------------------
-      * Use DFS, and push *finished* vertexes in a stack
+     Algorithm to find one sequence
+     ------------------------------
+        * Use DFS, and push *finished* vertexes in a stack
 
-      def post_visit_vertex(vertex):
-          stack.push(vertex)
+        def post_visit_vertex(vertex):
+            stack.push(vertex)
 
-   Algorithm to find schedule
-   --------------------------
-      * Use DFS and find all source vertices (with in-degree zero).
-      * After scheduling (deleting) these, find the new source vertices.
-      * Can be implemented in O(v + e)
-          - count in-degree of all vertices
-          - put source vertices in a queue
-          - upon deletion of a source, lower the in-degree of all its endpoints
-            and add the new sources to the queue
+     Algorithm to find schedule
+     --------------------------
+        * Use DFS and find all source vertices (with in-degree zero).
+        * After scheduling (deleting) these, find the new source vertices.
+        * Can be implemented in O(v + e)
+            - count in-degree of all vertices
+            - put source vertices in a queue
+            - upon deletion of a source, lower the in-degree of all its endpoints
+              and add the new sources to the queue
 
  Find cycles
  -----------
@@ -370,7 +406,7 @@ Graphs
     * Remove edges that are fully saturated
     * Repeat until no path remains
     * Proven to be O(v^3) if we always pick the shortest path (hence the use of BFS)
-
+    * Note: Faster algorithms exist using 'preflow-push methods' (see literature)
       total_volume = 0
       while True:
           initialize_search() # resets parent pointers, visited, and so on
@@ -402,6 +438,15 @@ Graphs
         while start.parent is not None:
             yield _find_edge(from=start, to=start.parent)
             start = start.parent
+
+  Minimum cost flow
+  -----------------
+     * Route a flow of capacity 'F' through a network with minimum cost
+       (so each edge has an associated cost).
+
+ Network flow with multiple sources/sinks
+ ----------------------------------------
+     * Just add a master source/sink that connects all sources/sinks
 
  Transitive Closure
  ------------------
@@ -494,3 +539,86 @@ Graphs
       and add an edge between them (that represents the shortest path between
       these 2 edges).
     * Repeat until you have no vertices with an odd degree anymore.
+
+ Graph connectivity
+ -------------------
+    * The edge/vertex connectivity is the minimum number of edges/vertices that
+      must be removed to make the graph disconnected.
+    * Notes:
+        - The lowest vertex degree is an upper bound for the connectivity
+          (as removing all the edges of this vertex will disconnect the graph)
+        - The connectivity is 0 if the graph is not (strongly) connected.
+        - Vertex connectivity is <= edge connectivity
+        - Articulation vertices mean the connectivity is 1
+    * Calculation:
+        - Make the graph unweighted, and pick any 'source' vertex.
+        - For any other vertex 'destination',
+          calculate the network flow between 'source' and 'destination'.
+          This is the number of cuts that will separate the graph between these
+          vertices,
+          so the minimum of these flows is the edge connectivity of the graph.
+        - requires 'v-1' executions of the network flow (which is O(v^3)),
+          --> O(v^4)
+        - To calculate the vertex flow, create a graph G' with a vertex for each
+          edge in G, and an edge if these edges share a vertex in G.
+          Then calculate the network flow of G'.
+
+ Find largest Clique
+ -------------------
+    * This is a subset which is fully connected, i.e. for each x, y in the subset
+      there is an edge from 'x' to 'y'.
+    * NP-complete
+
+ Find independent set
+ --------------------
+    * This is a set of vertices which are all disjoint, i.e. for each x, y in
+      the subset there is *no* edge from 'x' to 'y'.
+    * NP-complete
+    * Related to vertex-coloring, as each color used represents an independent set.
+    * Heuristic:
+       - Select the lowest degree vertex, add it to the set,
+          and remove itself, its edges and its neighboring vertices from the graph.
+       - Rinse and repeat.
+       - O(v + e)
+    * For a tree:
+       - Pick all the leafs, delete the next level, and repeat.
+       - O(n)
+
+ Vertex Cover
+ ------------
+    * A set of vertices so that every edge starts or ends in one (or two) of these
+      vertices.
+     * This covers all edges so not sure why it is called 'vertex cover' :-)
+    * NP-complete
+    * Related to independent set
+      (as all the vertices not in the cover are the largest independent set)
+    * Heuristic:
+         * Same as for independent set, but always pick the *largest* degree vertex
+
+ Traveling Salesman
+ ------------------
+    * Find they cycle with minimum cost that visits each vertex once
+    * NP-complete
+    * Heuristic:
+       * Calculate minimum spanning tree
+       * Do DFS in the resulting graph
+       * Define the tour by ordering the vertices in the order they were discovered
+
+ Isomorphism/Graph matching
+ --------------------------
+    * Are 2 graphs identical?
+    * NP-complete (probably, not proven)
+    * Some algorithm optimizations:
+       - Only try to match vertices with the same degree
+       - Use information in shortest-path-matrix to match only vertices with
+         the same set of shortest-paths.
+       - Use these optimizations for pruning while backtracking.
+
+ Steiner Tree
+ ------------
+    * Smallest tree connecting all the vertices
+    * Allows introduction of new vertices
+      (so instead of 2 parallel edges you have them meet and run together)
+    * Used in reality for waterpipes or heating ducts
+    * NP-complete
+    
