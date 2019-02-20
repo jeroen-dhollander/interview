@@ -4,15 +4,18 @@ Graphs
 
  Terminology
  -----------
-   * vertices and edges
-   * degree of a vertex is the number of edges adjacent to it
-   * in a 'regular graph' each vertex has the same degree
-   * the 'connectivity' of a graph is the smallest number of vertices
-     whos deletion would disconnect the graph
-  * A 'articulation vertex' or 'cut node' is a vertex whos deletion would
-    disconnect a connected component from the graph.
-  * A 'matching' is a subset of the edges so that no 2 edges in the subset share
-    a vertex
+   * Vertices and edges
+   * Degree of a vertex: The number of edges adjacent to it
+   * Regular graph: each vertex has the same degree
+   * Connectivity of a graph: the smallest number of vertices
+                              whos deletion would disconnect the graph
+  * Articulation vertex: or 'cut node': a vertex whos deletion would disconnect
+                                        a connected component from the graph.
+  * Matching: a subset of the edges so that no 2 edges in the subset share
+              a vertex
+  * Biconnected component: If any edge can be cut and the component is still connected
+                           -> find by searching for articulation vertices,
+                              they separate the biconnected components
 
  Flavors
  -------
@@ -182,10 +185,23 @@ Graphs
     * Order vertices so all directed edges go from left to right
     * Works on Directed Acyclical Graphs
     * Used to satisfy precedence constrains (X must be done before Y)
-    * Use DFS, and push *finished* vertexes in a stack
 
-    def post_visit_vertex(vertex):
-        stack.push(vertex)
+   Algorithm to find one sequence
+   ------------------------------
+      * Use DFS, and push *finished* vertexes in a stack
+
+      def post_visit_vertex(vertex):
+          stack.push(vertex)
+
+   Algorithm to find schedule
+   --------------------------
+      * Use DFS and find all source vertices (with in-degree zero).
+      * After scheduling (deleting) these, find the new source vertices.
+      * Can be implemented in O(v + e)
+          - count in-degree of all vertices
+          - put source vertices in a queue
+          - upon deletion of a source, lower the in-degree of all its endpoints
+            and add the new sources to the queue
 
  Find cycles
  -----------
@@ -206,9 +222,9 @@ Graphs
      * If you can go to every vertex from every vertex
      * Very useful (for example important for roads or you'd get stuck)
      * O(e + v)
-     * Use DFS, and add index to all vertices
+     * Use DFS, and remember in what order we leave the vertices
      * Reverse direction of all edges,
-       and use DFS on the reversed graph starting with the vertex with the lowest index.
+       and use DFS on the reversed graph starting with the vertex we left latest.
        -> each tree here is a strongly connected components
 
     Step 1:
@@ -279,30 +295,51 @@ Graphs
 
  Find Shortest path
  ------------------
-    * If unweighted, use BFS and remember the parent when discovering a vertex
-    * Else use Dijkstra
-    * O(v^2) as for each vertex we find the vertex with the lowest cost O(v)
-    * On each iteration visit the vertex with the lowest cost to reach.
-      Then use their edges to update the cost of the neighboring vertices
-      (if it is lower than the current cost). Also set the parent pointer in that
-      case.
-      Rinse and repeat, and at the end you have the cost and path
-          for vertex in vertices:
-              vertex.cost = math.inf
-          root.cost = 0
+    Unweighted graph
+    ----------------
+        * Use BFS and remember the parent when discovering a vertex
+    DAG
+    ---
+       * Direct, Acyclical Graph
+       * Use Topology sort and you have the path
+       * O(v + e)
+    Dijkstra
+    --------
+      * O(v^2) as for each vertex we find the vertex with the lowest cost O(v)
+      * On each iteration visit the vertex with the lowest cost to reach.
+        Then use their edges to update the cost of the neighboring vertices
+        (if it is lower than the current cost). Also set the parent pointer in
+        that case.
+        Rinse and repeat, and at the end you have the cost and path
+            for vertex in vertices:
+                vertex.cost = math.inf
+            root.cost = 0
 
-          to_visit = set(vertices)
+            to_visit = set(vertices)
 
-          while len(to_visit):
-              vertex = pop_vertex_with_lowest_cost(to_visit)
-              for edge in vertex:
-                  new_cost = vertex.cost + edge.weight
-                  if edge.endpoint.cost < new_cost:
-                      edge.endpoint.cost = new_cost
-                      edge.endpoint.parent = vertex
-          # Now the endpoint.cost and endpoint.parent can be used to find cost and
-          # direction of the shortest path
-     * Note: Only works with positive weights
+            while len(to_visit):
+                vertex = pop_vertex_with_lowest_cost(to_visit)
+                for edge in vertex:
+                    new_cost = vertex.cost + edge.weight
+                    if edge.endpoint.cost < new_cost:
+                        edge.endpoint.cost = new_cost
+                        edge.endpoint.parent = vertex
+            # Now the endpoint.cost and endpoint.parent can be used to find cost
+            # and direction of the shortest path
+       * Note: Only works with positive weights
+    A*
+    --
+       * A star is a best-first search,
+         where for each iteration it decides to extend the path with the minimum
+         value
+             f(n) = <cost-to-get-to-n> + <estimated-cost-from-n-to-end>
+         After this it updates the f(n) for all its neighbors and we repeat.
+      * This of this as Dijkstra but instead of going completely wide it smartly
+        tries to pick the path with the best prospect.
+      * For example, in navigation the estimate can be the straight line distance
+        between 'n' and the end.
+      * As long as the heuristic never overestimates the cost, then this algorithm
+        will have found the best solution the moment it reaches the end.
 
  Find All Shortest paths
  -----------------------
@@ -365,3 +402,95 @@ Graphs
         while start.parent is not None:
             yield _find_edge(from=start, to=start.parent)
             start = start.parent
+
+ Transitive Closure
+ ------------------
+    * The transitive closure of a graph G is the graph T with the same vertices
+      and an edge between x and y if there is a path in G connecting x and y.
+    * Algorithms:
+          * Using Breadth First Search
+             * Do a BFS (or DFS) from each vertex and remember all vertices encountered
+             * -> O(v (v + e))
+             + Runs good on sparse graphs
+
+          * Warshall's algorithm
+             * Same as Floyd's algorithm for shortest path.
+             * The matrix can be a bitvector (using '1' if there is a connection)
+             * O(n^3)
+    * Optimizations:
+        - Replace all cycles (strongly connected components) with a single vertex
+          (as you will be able to reach all of them if you can reach one of them)
+
+ Transitive Reduction
+ --------------------
+    * Find the smallest graph with the same transitive closure as the original graph
+    * i.e. cut all edges that are not required for connectivity
+    * Algorithms:
+        * Replace each strongly connected component with a simple directed cycle
+        * Not provable minimal
+        * O(v + e)
+        * Note: This might add edges that were not part of the original graph
+
+ Matching
+ --------
+    * Find the largest set of edges so that each vertex has at most one edge
+    * Useful for job matching if we have a job of workers where each can do
+      a subset of the tasks.
+
+ Bipartite Matching
+ ------------------
+    * A Bipartite graph is a graph where the vertices can be divided in 2 groups
+     so that all edges go from one group to the other.
+     Example: The graph linking workers to the jobs they can do
+        (as there will be no edges from worker to worker or job to job)
+    * To solve this for an *unweighted* graph,
+      use the network-flow algorithm by adding a source and a sink,
+      and connecting the source to each vertex in one group and the sink to each
+      vertex in the other. (all these connections have capacity one).
+      Then calculate the network flow and whatever streams you find are
+      part of the bipartite matching.
+
+ Eulerian Cycle
+ --------------
+    * Eulerian PATH: Can you draw a figure using a pen,
+                     drawing each line exactly once,
+                     without lifting the pen from the paper?
+    * Eulerian CYCLE: And, can you finish where you started?
+    * Possible for:
+        - undirected graph:
+            * has an Eulerian *CYCLE* iff (if and only if):
+               - connected
+               - each vertex has an even degree
+            * has an Eulerian *PATH* iff (if and only if):
+               - connected
+               - each vertex has an even degree except for 2 (the start and end)
+        - directed graph:
+            * has an Eulerian *CYCLE* iff (if and only if):
+               - strongly connected
+               - each vertex has the same in-degree and out-degree
+            * has an Eulerian *PATH* iff (if and only if):
+               - strongly connected
+               - each vertex but 2 has the same in-degree and out-degree
+               - one vertex has in-degree one smaller than the out-degree
+               - one vertex has in-degree one bigger than the out-degree
+    * To test for an Eulerian Cycle:
+        * BFS/DFS and count the in- and out-degrees
+    * To find an Eulerian Cycle:
+        * Perform DFS from some vertex v until you end up in v again.
+        * This is the 'main path'.
+        * Now perform DFS from the first vertex v' that has an untraveled edge,
+          until you end in v' again.
+          Splice this path into the main path (meaning the end result is:
+              - you take the original path from v until v'
+              - then you take the detour loop that you just created
+              - then you move on along the original path from v' to v.
+       * Repeat this step recursively until all edges are walked.
+
+ Chinese postman
+ ---------------
+    * Find the shortest Eulerian Cycle for any given graph
+    * To find this, we add edges to a graph until it is Eulerian,
+      by taking 2 vertices that have an odd number of edges,
+      and add an edge between them (that represents the shortest path between
+      these 2 edges).
+    * Repeat until you have no vertices with an odd degree anymore.

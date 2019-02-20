@@ -39,12 +39,16 @@ Sorting Algorithms
 
  Quick sort
  ----------
-    * split around pivot
+    * split around pivot (best median of 3)
     * sort 2 sub-arrays (can ignore pivot itself)
     * O(n log n)
     - worst case O(n^2) if pivot is always max/min
     + in-place
     + Typically 2-3 times faster than mergesort or heapsort
+    * Optimization:
+        - Fall back to insertion sort once n < 20ish
+        - If the compiler supports tail-recursion, do smallest partition first
+          to minimize stack usage
 
  Randomized quick sort
  ---------------------
@@ -79,9 +83,20 @@ Sorting Algorithms
      - Requires space of size 'n' (for counting sort)
      - The constants are higher than quick-sort, i.e. it does not always outperform quicksort
 
+  Externalized sorting
+  --------------------
+      * If the data is too big to be stored in memory,
+        the simplest approach is to populate a B-tree and walk it.
+
   One-sided binary search
   -----------------------
       To search in a sorted unbounded array,
       look for element 1,2,4,8,16,... until you've passed your element,
       then do binary search in the window
       --> great if we know the key is close to the current position
+
+  Binary search
+  -------------
+     * Not great if the number of keys does not fit in memory anymore
+       (due to the jumping around).
+     * Use B-trees in that case

@@ -191,3 +191,32 @@ Algorithms
            - Remove cheap but heavy items to simplify the problem
            - Scale: If C is too high, lower it by integer dividing all sizes.
              Then use dynamic programming
+
+  Median/selection search
+  -----------------------
+      * Find the k-th element in a set of n
+      * Better than average
+        (think of wealth of people that published research papers
+            --> Bill Gates is one of them so the average is misleading)
+      * Algorithms:
+          - Sort and take middle -> O(n lg n)
+          - Quicksort style: Take pivot, partition the data, and then use the
+               size of the partitions to know to continue with only the left/right
+               partition.
+               -> O(lg n), but worst case O(n^2) just like quicksort itself
+          - Sample if you can only see the data once
+              (flip a coin for each data-element, with low enough probability)
+
+  Job Scheduling
+  --------------
+     * Given a directed acyclic graph where edge from A to B means
+       'A must be done before B', create a schedule using the minimum time
+       (i.e. highest parallelism).
+     * Algorithms:
+          - Topological sorting: schedule consistent with the constraints
+          - Bipartite matching: assign jobs to people with the right skills
+          - Vertex/Edge coloring: Assign jobs to time slots
+     * Important metrics:
+         - Length of critical path
+         - Minimum completion time: If unlimited processors -> same as critical path
+         - Best schedule using X workers: NP-complete
