@@ -1,0 +1,139 @@
+-----------------------
+Set & String Algorithms
+-----------------------
+
+  Set Cover
+  ---------
+     * Given a collection of subsets,
+       find the smallest group of subsets whos union contain all items
+     * NP-complete
+     * Greedy heuristic:
+         * Create a available_elements set containing all elements
+         * Pick largest subset, and remove its elements from available_elements
+         * Repeat
+
+  Set Packing
+  -----------
+     * Same as set cover but find disjoint sets
+     * NP-complete
+     * We can be asked to minimize or maximize the number of sets.
+     * Greedy heuristic:
+         * Pick biggest/largest subset, and remove all subsets that clash with it
+         * Repeat
+
+  Find Substring
+  --------------
+    Scanning
+    --------
+       * simply walk the haystack and for each position check for the needle
+       * O(nm)
+       + Great for small patterns (m <= 5)
+
+    With hashing
+    ------------
+      * Easily done using hashing:
+           * Using a rolling hash mechanism,
+           * calculate the hash for the needle (of length m)
+             and all possible substrings of the stack (of length n),
+            then compare hashes.
+      --> complexity O(n + m)
+      - is _probably_ fast, unless we're unlucky with the collisions
+
+    With jump table
+    ---------------
+       * The idea is we work backwards,
+         and if we find a mismatch we don't simply go 1 position back,
+         but instead we look at the character that was in the haystack
+         and see where it is in the needle, and go back enough that it would
+         possible fit.
+         For example, when searching for 'needle' and we find the character 'd',
+         we know it can only appear in the 4th space of the needle,
+         so the next attempt we do will start 4 positions before the current
+         position.
+         To not constantly redo the offset calculations in the needle we do them
+         once up front
+      * Notes:
+          - This performs in O(n + m) with worst case O(n^2)
+          - For worst case use needle 'aaaaaaaaaZ' and a haystack with only 'a's.
+          - There are improved versions available that use multiple jump tables,
+            for example you can not only look at the mismatched character but also
+            at the amount of matching characters.
+            See 'Knuth-Morris' or 'Boyer-Moore'
+      * Implementation:
+          def _preprocess(needle):
+              # If we encounter a character that's not in the needle,
+              # there is no point in looking at the previous 'len(needle)' positions
+              result = defaultdict(lambda: len(needle))
+              # For each character in the needle we remember the closest position
+              # of that character to the start of the needle
+              for index in reversed(range(0, len(needle))):
+                  result[needle[index]] = len(needle) - index - 1
+              return result
+
+          def _get_match_length(haystack, needle, start):
+              for index in range(0, len(needle)):
+                  if haystack[start+index] != needle[index]:
+                      return index
+              return len(needle)
+
+          def find(haystack, needle):
+              lookup = _preprocess(needle)
+
+              start = len(haystack) - len(needle)
+              while start > 0:
+                  print(f"Searching '{needle}' at position {start}: '{haystack[start:]}'")
+                  match_length = _get_match_length(haystack, needle, start)
+                  if match_length == len(needle):
+                      # found a match
+                      return haystack[start:]
+                  # No match found
+                  print(f"First mismatching character is the {match_length}th character "
+                        f"'{haystack[match_length]}', so we move our search back "
+                        f"{lookup[haystack[match_length]]} positions")
+                  start = start + match_length - lookup[haystack[match_length]]
+              return 'NOT-FOUND'
+
+  Approximate string matching
+  ---------------------------
+      * Find the distance between 2 strings, i.e. the minimum cost way
+        to transform A to B
+      * Use dynamic programming where you look at the last characters of the strings, and:
+         - If they are equal: simply chop them off and recurse
+         - If they are different: try the following 3 transformations:
+             - delete the last character of 'left'
+                -> this represents a character is missing in 'right',
+                   e.g. 'abc' vs 'ab'
+             - delete the last character of 'right'
+                -> this represents an extra character in 'right'
+                   e.g. 'ab' vs 'abc'
+             - delete the last character of both
+                -> this represents the character changed,
+                   e.g. 'abc' vs 'abd'
+            - Assign a cost to each of these transformations
+              (usually 1 for each),
+              and then keep the transformation for which cost + recursion-cost
+              is lowest.
+      * Alternative problems:
+         * To find a mismatching substring, make the cost of deleting the first
+           characters zero,
+           and then run the algorithm repeatedly while cutting off the last
+           character of the full text
+           (be sure to NOT clear the memoization cache in between runs!)
+           e.g. to find misspellings of 'cat' in 'a cot is sleeping',
+           you do the appropriate matching of 'cat' in
+              'a cot is sleeping'
+              'a cot is sleepin'
+              'a cot is sleepi'
+              ...
+           and eventually you hit
+              'a cot'
+           which will match with cost 1 as we made deleting the first characters free.
+         * For the cost of the transformations you could even take the keyboard
+           layout into account (substituting 2 neighboring keys is cheaper)
+
+  Longest common substring/subsequence
+  ------------------------------------
+      * Build a suffix tree, and remember for each suffix
+          - what input strings it was present in.
+          - its length
+      * Then walk it and find the longest substring that is in all input strings

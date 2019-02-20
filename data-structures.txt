@@ -199,3 +199,76 @@ Data Structures
           - do a binary search pointing us to the first element in the array
           - then walk all the options until we no longer have a prefix match
      * Note: Fancy algorithms exist to populate this efficiently
+
+  Tree rotations
+  --------------
+     * Modify a binary search tree so one of the children becomes the root
+     * This is used while balancing binary trees
+     * This is easiest to visualize by giving each child a value
+       that satisfies the binary tree requirements.
+     * We can rotate 'right' and 'left'
+
+                4      Right rotate       2
+               / \     makes '2'         / \
+              2   5    the root         1   4
+             / \                           / \
+            1   3      +---------->       3   5
+
+
+                4      Right rotate       2
+               / \     restores '4'      / \
+              2   5    as the root      1   4
+             / \                           / \
+            1   3      <----------+       3   5
+
+
+  AVL-Tree
+  --------
+     * A balanced binary tree
+     * For each node we ensure the height of its subtrees are at most 1 different.
+     * Algorithm:
+        - On each node, remember its height
+          (note you can save memory by storing '0' if its balanced,
+           '-1' if the left is one higher and '1' if the right is higher,
+           but the algorithm is a bit easier to understand if we remember the height,
+           and it can be modified later)
+       - After inserting a node we travel up to the root and check if the tree
+         is still balanced. If it is not we will rebalance the tree.
+       - How unbalanced can a node be?
+          --> it will have a height difference of 2 between its subtrees,
+              as we only added a single element and the tree was previously balanced
+              meaning no height difference exceeded 1.
+      - So this means we only have 4 possible case:
+         * In all the examples below, T1, T2, T3 and T4 have height H,
+         * The names are 'G' for Grandparent, 'P' for Parent and 'C' for child.
+         * 'G' is the node that is unbalanced.
+         1) the left-left subtree is heaviest
+             --> we can fix this with a single right rotate of G
+
+                   G                              P
+                  / \       Right Rotate        /   \
+                 P   T4                        C      G
+                / \        +------------>    /  \    /  \
+               C   T3                       T1  T2  T3  T4
+              / \
+            T1   T2
+
+         2) the left-right subtree is heaviest
+             --> We first do a left rotate of C
+             --> And then it becomes the same as case 1. so another right rotate
+                 of G balances the tree
+
+                   G                            G
+                  / \       Left Rotate C      / \
+                 P   T4                       C   T4
+                / \        +------------>    / \
+               T3  C                        P   T2
+                  / \                      / \
+                T1   T2                  T1   T3
+
+          3) the right-right subtree is heaviest
+             This is the mirror of case 1., so a left rotate of G fixes the balance.
+
+          4) the right-left subtree is heaviest
+             This is the mirror of case 2., so a right rotate of C followed
+             by a left rotate of G does the trick.
