@@ -12,16 +12,7 @@ Algorithms:
 -----------------
 
 Operating Systems:
-   - Schedulers
-   - How context switching works
-   - Locks
-      mutex
-      semaphore
-      monitors
-   - Livelock
-   - Resources needed by process vs thread
    - Read Doug Lea's Concurrent Programming in Java
-
 
 -----------------
 
@@ -31,7 +22,7 @@ Problem Solving:
 
 System Design:
    - features sets
-   - distributed ssytems
+   - distributed systems
    - distributed hash table Systems
    - resource estimation with real Systems
    - map-reduce
@@ -58,22 +49,3 @@ DESIGN INTERVIEW
    3) Don't be messy (aka break down, and work from left to right)
    4) Communicate, Ask questions: Say why you do things, ask about restrictions/focus
    5) Know how to scale
-
-
-
-
-   def is_valid_solution(k, state):
-       return k == state.n
-
-   def get_options(k, state):
-       return (
-          pos
-          for pos in state.available_positions
-          if pos != k
-       )
-
-    def make_move(k, option, state):
-         del state.available_positions[option]
-
-    def undo_move(k, option, state):
-         state.available_positions.add(option)

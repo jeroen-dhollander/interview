@@ -112,7 +112,6 @@ Graphs
  ----------------
     * Assign each vertex a color so no edge (directly) links 2 vertices with
       the same color, using a minimum number of colors.
-    * O(v + e)
     * Use case: Register allocation in compilers
     * Optimal number of colors is the maximum degree of the graph,
       unless the graph is complete or an odd circle (then you need one more).
@@ -126,6 +125,7 @@ Graphs
  -----------------
     * A graph is 'Bipartite' if it can be colored using only 2 colors
     * (example had-sex-with if nobody was LGT)
+    * O(v + e)
     * Use BFS and give each one the opposite color of the parent:
 
       for vertex in vertices:
@@ -171,9 +171,9 @@ Graphs
      * Also called 'cut node'
      * Good explanation here:
         https://www.eecs.wsu.edu/~holder/courses/CptS223/spr08/slides/graphapps.pdf
-     * Basically we use DFS, and when we encounter a back-edge the vertex knows
-       'hey, I am part of a loop that can go back to ancestor X'.
-       Then, when leaving this vertex it will inform its parent of this back-edge,
+     * Basically we use DFS, and when we encounter a back-edge to vertex X,
+       the vertex knows 'hey, I am part of a loop that can go back to ancestor X'.
+       Then, when leaving this vertex it will inform its parent it can reach X,
        which recursively happens so that eventually the ancestor 'X' is told
        it is part of a loop that goes up to themselves.
        Now this ancestor knows it is a articulation vertex,
@@ -621,4 +621,3 @@ Graphs
       (so instead of 2 parallel edges you have them meet and run together)
     * Used in reality for waterpipes or heating ducts
     * NP-complete
-    
