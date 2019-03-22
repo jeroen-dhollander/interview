@@ -1,131 +1,160 @@
+
 -------------
 System Design
 -------------
 
- Multitasking
- ------------
-   * Preemptive:
-       - The scheduler decides when a process starts and stops running
-       - Prevents a single process from dominating the system
-       - Each time a process is scheduled it receives a timeslice,
-         Which can be based on
-            - priority
-            - system load
-            - process-type (IO-bound vs CPU-bound)
-            - ...
-   * Cooperative:
-       - A process only stops running when it voluntarily decides to do so.
-       - A but like an event-loop but on process level
+  * A nice summary of scalable architecture principles/patterns can be found on
+    https://dzone.com/articles/component-load-testing
+    I've included this as 'Building Blocks of a Scalable Architecture.pdf'
 
- Process Scheduling queues
- -------------------------
-    * All PCB (Process Control Blocks) are stored in a set of queues
-    * Ready Queue:
-        - The process is waiting to be scheduled
-    * I/O Waiting Queue:
-        - The process is waiting for some IO to become available (which can include
-          waiting for user input in a GUI).
-        - When the IO is available, these processes are moved to the Ready Queue
-    * Run Queue:
-        - Contains a single entry per processor core (the next process to run)
+ Distributed hash table
+ ----------------------
+    * Like a hash table, but data is distributed across many nodes
+    * Tries to minimize the cost of node arrival/departure/failure
+    * Examples BitTorrent, Web caching
+    * History:
+        * Napster:
+            * Has central index server
+            * Each node sends list of files to central servers on arrival
+            - Index servers are a weak point
+        * Gnutella:
+           * Flooded Query Model
+           * Each search is broadcasted to other nodes
+           + no weak points
+           - significantly less efficient
+    * Modern implementations use key-based routing
+        * Each file is associated with a key, and files with similar keys are
+          clustered on a set of nodes
+    * Properties:
+        -  Autonomy and decentralization: the nodes form the system
+                                          without central servers/coordination
+        - Fault tolerance: Nodes can come and go
+        - Scalability: Should work efficiently with thousands/millions of nodes
+    * How does key-based-routing work:
+        1) Use special hashing mechanism to map keys to nodes
+            - These hashes have the special property that adding/removing one
+              hash bucket (a node) will only impact what keys are owned by the
+              neighboring buckets (nodes).
+            - This uses the concept of keyspace distance, i.e. given a key and a
+              node id we can know how close this node is to a node owning this key.
+            - Examples: 'consistent hashing' or 'rendezvous hashing' to map keys to nodes
+        2) Use this to build an overlay network:
+          - each node has a set of links to its neighboring nodes
+          - for each key 'k', it either has a link to a node owning 'k',
+            or to a node which ID is closer to 'k'.
+        --> If each node has O(log n) neighbors we can find all data in maximum
+            O(log n) hops.
+            Or alternatively:
+                O(1) neighbors --> O(n) hops
+                O(sqrt(n)) neighbors --> O(1) hops
 
- Process Scheduler
+ MapReduce
+ ---------
+    * Framework to process queries across a large dataset using a large number
+      of computers (in parallel).
+    * Operations:
+       1) Map: Each node applies the 'map' function to the local data.
+               E.g. sort students by first name
+       2) Shuffle: Redistribute data based on the output keys of the 'map' function,
+                   so that all data belonging to one key live on one node.
+                   E.g. all records of students called 'Bob' end up in 1 node.
+       3) Reduce: Worker nodes can now process the group of output data per key.
+    * A server farm can for example use MapReduce to sort a petabyte of data
+      in a few hours.
+    * Example: If for 1.1B people you want to know the average number of contacts
+               each age group has.
+               1) Each node has information about X people, and for each person
+                  it produces one record (<age>, (<num-contacts>, 1))
+               2) Then all records are grouped by age
+                  (we can have more than 1 worker for 1 age group)
+               3) The worker for a given age then reduces this to
+                  (<age>, (<sum-of-num-contacts>, <num-records-processed))
+               4) This can be further accumulated until eventually we have a
+                  single record for each age group.
+
+ Boolean text search
+ -------------------
+     * Search texts which contain A and B but not C
+     --> store text in inverted indices
+
+     Inverted Index
+     --------------
+         * MOST EFFICIENT structure for supporting ad-hoc text search
+         * Split your data in documents (e.g. 5 pages is 1 document)
+         * Create a sorted dictionary
+             - key = each word
+             - data = list of document-id's the word is found in
+                      --> called 'posting list'
+         * Note: Obviously this is not stored in a Python map, but instead
+           the key indices could be in memory and the actual data lists on the disk
+        * The posting list is sorted on document-id,
+          so that finding which document contains words A and B becomes trivial
+          (find their posting lists and walk both)
+        * Optimizations:
+            * for finding 'n' words, merge the posting lists starting with the
+              shortest first
+            * Use skip-lists to optimize using the posting lists
+              (heuristic: sqrt(p) skip pointers for a posting list of length p).
+
+     Limitations
+     -----------
+       - We want spelling mistake tolerance
+       - We want to search for compound concepts like 'operating system',
+         or for proximity ('gates' near 'Microsoft').
+       - We want to take the frequency of hits into account
+       - We want the results to be ranked
+
+
+ Proximity queries
  -----------------
-    * Must satisfy 2 conflicting goals:
-        - Fast process response time (low latency)
-        - Maximal system utilization (high throughput)
+    * If we want to hit things like 'palo alto' or 'constitution of the United States'
 
- Context switching
- -----------------
-    * When a process state is changed from running to/from not-running,
-      the process state is saved (in the PCB)
-    * Expensive
-    * Commonly implemented by having a stack per thread/process,
-      and store the context on the stack.
-      That way the context switching can be done by changing the stack pointer
-      to a new location.
-    * Must save
-        Program Counter
-        Scheduling information
-        register values
-        ...
+     Biword Index
+     ------------
+        * Also contains word pairs, e.g. 'stanford university palo alto' results
+          in 'stanford university', 'university palo' and 'palo alto'
+          --> Drop function words when indexing, so 'day of the month' becomes
+             'day month'
+        -> not often used as it greatly increases the size of the vocabulary
 
- Interrupts
- ----------
-    * Hardware or software sends interrupt signals to the CPU,
-      which then does a context switch to the corresponding interrupt handler.
-    * Examples:
-         - 'key pressed' (sent by keyboard)
-         - 'timer interrupt'
-         - 'page-fault'
+     Phrase Index
+     ------------
+        * Also contains longer word sequences
 
- Swapping
- --------
-    * The Medium-term-scheduler will remove (swap) processes to secondary
-      memory so it does not consume memory
+     Positional Index
+     -----------------
+        * For each matching document, also store the number of occurrences,
+          as well as their position.
+        + can do the same things as a biword index and more
+        - roughly 2-4 times as large as non-positional indexes
 
- Scheduling algorithms
- ---------------------
-    * First Come First Served
-        + simple
-        - short processes at the end might have to wait a long time
-        - low throughput
-    * Shortest Process Next
-        + completes a lot of jobs fast
-        - risk of live lock
-        - must be able to estimate how long a process will run
-     * Shortest Remaining Time
-        + short jobs still run fast
-        + best if we want to run as many processes as possible
-        - risk of live lock
-        - must be able to estimate how long a process will run
-     * Round Robin
-        + no live lock
-        - too much process switching if the timeslice is too short
-        + unresponsive system if the timeslice is too long
-      * Priority Scheduling
-        - risk of live lock/starvation
-        --> can be fixed by aging the priority
-      * Pre-Emption
-           * a job that takes too long is interrupted and can continue later on
-           * Round-robin pre-emptive scheduling
-               + no risk of process starvation
-               + no risk of priority inversion
-                (where a high priority job waits forever on a low priority one)
-           * Fixed Priority pre-emptive scheduling
-               -> highest priority will always take precedence
-               + high priority jobs still run even if system is overloaded
-           * Deadline monotonic pre-emptive scheduling
-               * priority is inversely related to the deadline
-               * does not change when deadline gets closer
-               - risk of process starvation
-               - risk of priority inversion
-           * Dynamic priority pre-emptive scheduling
-               * Earliest deadline goes first
-               + guaranteed to finish jobs on time if CPU utilization < 1
-               - risk of process starvation
-               - risk of priority inversion
 
- Inter Process Communication
- ---------------------------
-    * IPC
-    * The mechanisms an OS provides for processes to manage shared data
-    * Approaches:
-        - File on the disk (can be read by multiple processes)
-        - Signal: A one-way asynchronous notification.
-                  E.g. sigkill, Ctrl-C, segmentation fault, interrupt,
-                  broken-pipe, child-stopped, window-size-change, ...
-        - Sockets: TCP/UDP stream, sent over a network-interface
-        - Unix domain socket/IPC socket:
-             - Data communications endpoint for exchanging data between processes
-               on the same system.
-             - Can even send file descriptors to another process
-        - Message queue: stream that preserves message boundaries
-        - Pipe: unidirectional data channel (buffered by OS)
-        - Shared memory
-        - Memory mapped file
-        - Synchronization (semaphores and stuff)
-        - Monitors: an object that can be used completely safe by multiple threads,
-                    i.e. it is guaranteed only one will be executing a given method
-                    at any time.
-                    Provided by the language (Python/Java/C#, not C)
+ Wildcard queries
+ ----------------
+    * When user uses one or more wildcards
+
+    Reverse B-tree
+    --------------
+      * Use binary tree like B-tree for prefix matching (mon*),
+        and use a reverse B-tree (containing all words backwards)
+        for suffix matching (*ster).
+        Finally, combine results of both for internal wildcards (mo*er).
+
+    Permuterm index
+    ---------------
+       * Use special character for end-of-word, and store all permutations
+         -> ['hello$', 'ello$h', 'llo$he', 'lo$hel', 'o$hell']
+       * Then, rotate the query until the wildcard is at the end
+         -> 'mo*er' -> 'er$mo*'
+      * For multiple wildcards: get matches that match a single wildcard,
+        and filter
+      - huge dictionary required (10x)
+
+    k-gram index
+    ------------
+       * Store all sequences of length 'k' of a word, and '$' to indicate start/end
+         so 'castle' -> ['$ca', 'cas', 'ast', 'stl', 'tle', 'le$']
+      * These sequences then point to all matching words, so we store
+         etr -> [ 'beetroot', 'metric', ... ]
+      * To match wildcards, run boolean queries: 'mo*er' -> '$mo' AND 'er$'
+      + Preferred method these days

@@ -1,11 +1,4 @@
 
-TODO:
-   - Read LinkedIn document in one of the mails
-   - Read Amazon Leadership Principles
-   - Review STAR interview technique (for Amazon?)
-   - Amazon: Alex Escott will do interview
-   - Amazon: Open livecode link
-
 Algorithms:
    - https://www.amazon.com/Algorithm-Design-Manual-Steven-Skiena/dp/1848000693
 

@@ -1,0 +1,131 @@
+-----------------
+Operating Systems
+-----------------
+
+ Multitasking
+ ------------
+   * Preemptive:
+       - The scheduler decides when a process starts and stops running
+       - Prevents a single process from dominating the system
+       - Each time a process is scheduled it receives a timeslice,
+         Which can be based on
+            - priority
+            - system load
+            - process-type (IO-bound vs CPU-bound)
+            - ...
+   * Cooperative:
+       - A process only stops running when it voluntarily decides to do so.
+       - A but like an event-loop but on process level
+
+ Process Scheduling queues
+ -------------------------
+    * All PCB (Process Control Blocks) are stored in a set of queues
+    * Ready Queue:
+        - The process is waiting to be scheduled
+    * I/O Waiting Queue:
+        - The process is waiting for some IO to become available (which can include
+          waiting for user input in a GUI).
+        - When the IO is available, these processes are moved to the Ready Queue
+    * Run Queue:
+        - Contains a single entry per processor core (the next process to run)
+
+ Process Scheduler
+ -----------------
+    * Must satisfy 2 conflicting goals:
+        - Fast process response time (low latency)
+        - Maximal system utilization (high throughput)
+
+ Context switching
+ -----------------
+    * When a process state is changed from running to/from not-running,
+      the process state is saved (in the PCB)
+    * Expensive
+    * Commonly implemented by having a stack per thread/process,
+      and store the context on the stack.
+      That way the context switching can be done by changing the stack pointer
+      to a new location.
+    * Must save
+        Program Counter
+        Scheduling information
+        register values
+        ...
+
+ Interrupts
+ ----------
+    * Hardware or software sends interrupt signals to the CPU,
+      which then does a context switch to the corresponding interrupt handler.
+    * Examples:
+         - 'key pressed' (sent by keyboard)
+         - 'timer interrupt'
+         - 'page-fault'
+
+ Swapping
+ --------
+    * The Medium-term-scheduler will remove (swap) processes to secondary
+      memory so it does not consume memory
+
+ Scheduling algorithms
+ ---------------------
+    * First Come First Served
+        + simple
+        - short processes at the end might have to wait a long time
+        - low throughput
+    * Shortest Process Next
+        + completes a lot of jobs fast
+        - risk of live lock
+        - must be able to estimate how long a process will run
+     * Shortest Remaining Time
+        + short jobs still run fast
+        + best if we want to run as many processes as possible
+        - risk of live lock
+        - must be able to estimate how long a process will run
+     * Round Robin
+        + no live lock
+        - too much process switching if the timeslice is too short
+        + unresponsive system if the timeslice is too long
+      * Priority Scheduling
+        - risk of live lock/starvation
+        --> can be fixed by aging the priority
+      * Pre-Emption
+           * a job that takes too long is interrupted and can continue later on
+           * Round-robin pre-emptive scheduling
+               + no risk of process starvation
+               + no risk of priority inversion
+                (where a high priority job waits forever on a low priority one)
+           * Fixed Priority pre-emptive scheduling
+               -> highest priority will always take precedence
+               + high priority jobs still run even if system is overloaded
+           * Deadline monotonic pre-emptive scheduling
+               * priority is inversely related to the deadline
+               * does not change when deadline gets closer
+               - risk of process starvation
+               - risk of priority inversion
+           * Dynamic priority pre-emptive scheduling
+               * Earliest deadline goes first
+               + guaranteed to finish jobs on time if CPU utilization < 1
+               - risk of process starvation
+               - risk of priority inversion
+
+ Inter Process Communication
+ ---------------------------
+    * IPC
+    * The mechanisms an OS provides for processes to manage shared data
+    * Approaches:
+        - File on the disk (can be read by multiple processes)
+        - Signal: A one-way asynchronous notification.
+                  E.g. sigkill, Ctrl-C, segmentation fault, interrupt,
+                  broken-pipe, child-stopped, window-size-change, ...
+        - Sockets: TCP/UDP stream, sent over a network-interface
+        - Unix domain socket/IPC socket:
+             - Data communications endpoint for exchanging data between processes
+               on the same system.
+             - Can even send file descriptors to another process
+        - Message queue: stream that preserves message boundaries
+        - Pipe: unidirectional data channel (buffered by OS)
+        - Shared memory
+        - Memory mapped file
+        - Synchronization (semaphores and stuff)
+        - Monitors: an object that can be used completely safe by multiple threads,
+                    i.e. it is guaranteed only one will be executing a given method
+                    at any time.
+                    Provided by the language (Python/Java/C#, not C)
