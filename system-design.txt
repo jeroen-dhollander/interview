@@ -5,7 +5,7 @@ System Design
 
   * A nice summary of scalable architecture principles/patterns can be found on
     https://dzone.com/articles/component-load-testing
-    I've included this as 'Building Blocks of a Scalable Architecture.pdf'
+    You should really print and study that
 
  Distributed hash table
  ----------------------
