@@ -181,8 +181,11 @@ Algorithms
          - if price/kg is equal -> still NP problem, known as 'subset sum'
          - all sizes are small integers
             -> dynamic programming O(nC) time and O(C) space
-               (Keep track if a subset has a subset summing up every number 0..C.
-                Then one by one add items until we consider the entire set)
+                 * Build matrix.
+                     * Column 'x' has all solutions only containing elements 0..x. Row 'y' has solutions where capacity is 'y'.
+                  * So to populate a new column you have 2 options:
+                        * You either use the new element - then value is 'cost of new element' + solution in previous row for the remaining capacity.
+                        * You don't use the new element - then value is the same value as the one in the previous column.
             --> up to C 1000
       * Solve use backtracking and an array of 0/1 to indicate presence or not.
       * Heuristics:
